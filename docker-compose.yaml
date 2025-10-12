@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+
+  # Builds the frontend Docker image and creates the frontend microservice
+  brian-yolo-client:
+    # --- CORRECTION 1a: Use YOUR DockerHub username and correct versioning ---
+    image: jjumaaa/brian-yolo-client:v1.0.0
+    build: ./client
+    container_name: jjumaaa-yolo-client # Adjusted container name for clarity
+    # Removed unnecessary stdin_open: true and tty: true for production services
+    restart: always
+    # --- CORRECTION 2: Frontend Port must map to 80 (Nginx) ---
+    ports:
+      - "80:80"
+    depends_on: 
+      - brian-yolo-backend
+    networks:
+      - app-net
+
+  # Builds the backend Docker image and creates the backend microservice
+  brian-yolo-backend:
+    # --- CORRECTION 1b: Use YOUR DockerHub username ---
+    image: jjumaaa/brian-yolo-backend:v1.0.0
+    build: ./backend
+    container_name: jjumaaa-yolo-backend # Adjusted container name for clarity
+    # Removed unnecessary stdin_open: true and tty: true for production services
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on: 
+      - app-ip-mongo
+    networks:
+      - app-net
+    # --- CRITICAL CORRECTION 3: Set MONGO_URI for backend connectivity ---
+    environment:
+      # Use the service name defined below (app-ip-mongo)
+      MONGO_URI: mongodb://app-ip-mongo:27017/yolomy 
+      NODE_ENV: production # Set to production mode
+
+  # Creates the database microservice
+  app-ip-mongo:
+    # --- CRITICAL CORRECTION 1c: Use older mongo image for size objective ---
+    image: mongo:4.0
+    container_name: app-mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - app-net
+    volumes:
+      # This format is correct but can be simplified; keeping the original volume name.
+      - app-mongo-data:/data/db
+
+# Creates the network infrastructure necessary for the containers to communicate with each other
+networks:
+  app-net:
+    name: app-net
+    driver: bridge
+    # --- CORRECTION 4: Removed unnecessary ipam block ---
+    # attachable: true
+    # ipam:
+    #   config:
+    #     - subnet: 172.20.0.0/16 
+    #       ip_range: 172.20.0.0/16 
+
+# Creates a Docker volume that persists all the data stored in the database
+volumes:
+  app-mongo-data:
+    driver: local
