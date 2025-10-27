@@ -1,0 +1,21 @@
+---
+- name: Deploy Containerized E-Commerce Application
+  hosts: target_servers
+  become: yes # Required for installing packages and managing Docker
+  vars_files:
+    - vars/global.yml
+  
+  pre_tasks:
+    - name: Ensure Python 3 is installed for Ansible (needed on minimal boxes)
+      ansible.builtin.raw: sudo apt-get update && sudo apt-get install -y python3
+      changed_when: false
+      tags: always
+
+  roles:
+    # 1. To setup Docker and Docker Compose
+    - role: setup-docker
+      tags: setup_docker
+
+    # 2. To clone Code and Deploy the App via Docker Compose
+    - role: app-deployment
+      tags: app_deployment
