@@ -10,6 +10,7 @@
 - name: Start Docker Compose stack (build and run - using v2 module)
   community.docker.docker_compose_v2:
     project_dir: "{{ repo_dest }}"
+    project_src: "{{ repo_dest }}"
     build: always    # Build the microservices using the Dockerfiles in the cloned repo
     state: present # Ensures containers are created and running
   tags: run_app
