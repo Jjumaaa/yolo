@@ -3,7 +3,7 @@
   ansible.builtin.git:
     repo: "{{ repo_url }}"
     dest: "{{ repo_dest }}"
-    version: main # The branch to checkout
+    version: master # The branch to checkout
     force: yes    # Ensures the repo is clean on re-runs
   tags: clone_code
 
