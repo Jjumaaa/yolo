@@ -1,30 +1,59 @@
 ---
-- name: Install dependencies and Docker
+# 1. Install prerequisite packages
+- name: Install dependencies required for adding Docker's repository
   ansible.builtin.apt:
-    name: 
+    name:
       - apt-transport-https
       - ca-certificates
       - curl
+      - gnupg
+      - lsb-release
       - software-properties-common
+    state: present
+    update_cache: yes
+  tags: install_deps
+
+# 2. Add Docker GPG key
+- name: Add Docker GPG apt Key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags: setup_repo
+
+# 3. Add Docker repository
+- name: Add Docker Repository
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+    state: present
+    update_cache: yes
+  tags: setup_repo
+
+# 4. Install Docker packages (Now available)
+- name: Install Docker Packages (docker-ce, cli, etc.)
+  ansible.builtin.apt:
+    name:
       - docker-ce
       - docker-ce-cli
       - containerd.io
     state: present
-    update_cache: yes
-  tags: install
+  tags: install_docker
 
-- name: Add 'vagrant' user to the 'docker' group (allows running docker commands without sudo)
+# 5. Add 'vagrant' user to the 'docker' group
+- name: Add 'vagrant' user to the 'docker' group
   ansible.builtin.user:
     name: vagrant
     groups: docker
     append: yes
   tags: config
 
-- name: Install Docker Compose plugin (modern method)
+# 6. Install Docker Compose v2 plugin
+# Note: The 'apt' module is used here as the Docker Compose plugin is now often included, 
+# but we will use the installation method matching the modern approach (using 'get_url' is fine too).
+- name: Install Docker Compose plugin (using get_url module)
   ansible.builtin.get_url:
     url: https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64
     dest: /usr/local/lib/docker/cli-plugins/docker-compose
     mode: '0755'
     owner: root
     group: root
-  tags: install
+  tags: install_docker_compose
