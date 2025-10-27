@@ -1,0 +1,19 @@
+---
+- name: Clone the latest version of the repository
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ repo_dest }}"
+    version: main
+    # Use 'force: yes' for idempotency during testing
+    force: yes
+  tags: clone_code
+
+- name: Start Docker Compose stack (build and run)
+  community.docker.docker_compose:
+    project_src: "{{ repo_dest }}"
+    build: yes # Build images from Dockerfiles locally
+    state: present # Ensures containers are created and running
+  environment:
+    # Lazima you ensure correct permissions for the vagrant user to interact with docker socket
+    DOCKER_HOST: unix:///var/run/docker.sock
+  tags: run_app

@@ -1,0 +1,30 @@
+---
+- name: Install dependencies and Docker
+  ansible.builtin.apt:
+    name: 
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+    update_cache: yes
+  tags: install
+
+- name: Add 'vagrant' user to the 'docker' group (allows running docker commands without sudo)
+  ansible.builtin.user:
+    name: vagrant
+    groups: docker
+    append: yes
+  tags: config
+
+- name: Install Docker Compose plugin (modern method)
+  ansible.builtin.get_url:
+    url: https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64
+    dest: /usr/local/lib/docker/cli-plugins/docker-compose
+    mode: '0755'
+    owner: root
+    group: root
+  tags: install
