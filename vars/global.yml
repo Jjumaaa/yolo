@@ -1,0 +1,4 @@
+---
+# Variables for the entire deployment
+repo_url: "https://github.com/Jjumaaa/yolo.git" 
+repo_dest: "/home/vagrant/yolo" # Hii ni destination path on the VM
