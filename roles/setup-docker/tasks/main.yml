@@ -46,6 +46,16 @@
     append: yes
   tags: config
 
+  # --- NEW TASK ---
+- name: Ensure Docker Compose plugin directory exists
+  ansible.builtin.file:
+    path: /usr/local/lib/docker/cli-plugins
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  tags: install_docker_compose
+
 # 6. Install Docker Compose v2 plugin
 # Note: The 'apt' module is used here as the Docker Compose plugin is now often included, 
 # but we will use the installation method matching the modern approach (using 'get_url' is fine too).
