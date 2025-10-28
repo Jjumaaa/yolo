@@ -64,6 +64,9 @@ If the VM is already running, you can re-run the deployment using:
 ```bash
 vagrant provision
 
+Expected Output:
+
+
 # Accessing the Application
 Once the vagrant provision command completes successfully (failed=0 in the PLAY RECAP), your application is running.
 
@@ -92,3 +95,8 @@ vagrant suspend	Pause the VM and save its state (fastest to resume).
 vagrant halt	Gracefully shut down the VM.
 vagrant status	Check the current state of the VM.
 vagrant destroy -f	Permanently delete the VM and all associated data.
+
+```
+
+## Expected output when you Run vagrant up --provision or vagrant provision:
+![alt text](ImagesFolder/SuccessfulrunofVagrantProvision.png)
