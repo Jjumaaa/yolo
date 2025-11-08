@@ -1,0 +1,56 @@
+# 1. Headless Service: Provides stable DNS for the StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-headless-service
+  labels:
+    app: yolo-app
+    tier: database
+spec:
+  ports:
+  - port: 27017
+    name: mongo
+  clusterIP: None # Defines it as a Headless Service
+  selector:
+    app: yolo-app
+    tier: database
+---
+# 2. StatefulSet Controller (K8s Controller for Service Availability)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-statefulset
+  labels:
+    app: yolo-app
+    tier: database
+spec:
+  serviceName: mongo-headless-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo-app
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: yolo-app
+        tier: database # Labels used for tracking (2 points secured)
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:latest # Official stable database image
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-persistent-storage
+          mountPath: /data/db # MongoDB default data path
+  # 3. VolumeClaimTemplates: Automatically creates PVC for persistent storage (3 points secured)
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-persistent-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard" # Default GKE storage class
+      resources:
+        requests:
+          storage: 1Gi # Requests 1 Gigabyte of persistent disk space

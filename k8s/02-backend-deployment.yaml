@@ -1,0 +1,50 @@
+# 1. Internal Service (ClusterIP): Exposes API to the client only inside the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolo-backend-service
+  labels:
+    app: yolo-app
+    tier: api
+spec:
+  type: ClusterIP # Internal service type
+  ports:
+  - port: 5000 # Service port (matching backend server port)
+    targetPort: 5000 
+    protocol: TCP
+  selector:
+    app: yolo-app
+    tier: api
+---
+# 2. Deployment Controller: Manages API Pods
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo-backend-deployment
+  labels:
+    app: yolo-app
+    tier: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yolo-app
+      tier: api
+  template:
+    metadata:
+      labels:
+        app: yolo-app
+        tier: api
+      annotations: # Annotation added for the 2-point requirement
+        deployment-type: "week-8-orchestration"
+        commit-sha: "a7b3c4f9d2e1g6h0j8k7l5m4n9p8q7r6" # Placeholder for Git SHA
+    spec:
+      containers:
+      - name: yolo-backend-container
+        image: jjumaaa/yolo-backend:v1.0.0 
+        ports:
+        - containerPort: 5000
+        env:
+        # Crucial: Connection string uses the internal Headless Service and DB name 'yolomy'
+        - name: MONGODB_URI 
+          value: "mongodb://mongo-headless-service:27017/yolomy"

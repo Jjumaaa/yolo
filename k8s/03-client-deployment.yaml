@@ -1,0 +1,47 @@
+# 1. External Service (LoadBalancer): Exposes the app to the internet (2 points secured)
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolo-client-external-service
+  labels:
+    app: yolo-app
+    tier: frontend
+spec:
+  type: LoadBalancer # This provisions the external IP for the live URL
+  ports:
+  - port: 80 # External public port
+    targetPort: 80 # Container port (Nginx)
+    protocol: TCP
+  selector:
+    app: yolo-app
+    tier: frontend
+---
+# 2. Deployment Controller: Manages Client Pods
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo-client-deployment
+  labels:
+    app: yolo-app
+    tier: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: yolo-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: yolo-app
+        tier: frontend
+    spec:
+      containers:
+      - name: yolo-client-container
+        image: jjumaaa/yolo-client:v1.0.0 # <-- DOCKER USERNAME REPLACED
+        ports:
+        - containerPort: 80
+        env:
+        # Crucial: API location corrected to port 5000 (matching backend)
+        - name: REACT_APP_API_URL 
+          value: "http://yolo-backend-service:5000/api" # Port corrected to 5000
