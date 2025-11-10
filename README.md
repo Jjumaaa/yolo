@@ -1,102 +1,106 @@
-# Automated Container Deployment with Vagrant and Ansible
+# Yolo Full-Stack Application Deployment on Kubernetes
 
-Welcome to the **DevOps deployment repository**.  
-This project demonstrates how to provision a virtual machine (VM) using **Vagrant** and deploy a **multi-container Docker application** using an **Ansible playbook**.
-
----
-
-## Table Of Contents
-
-- [Prerequisites](#prerequisites)
-- [Project Overview](#project-overview)
-- [Getting Started](#getting-started)
-- [Accessing the Application](#accessing-the-application)
-- [Troubleshooting](#troubleshooting)
-- [Management Commands](#management-commands)
-
----
-
-## Prerequisites
-
-Before deploying the stack, ensure you have the following installed on your host machine
-
-- **VirtualBox**: The virtualization software (used by Vagrant)  
-- **Vagrant**: The tool for managing and provisioning VMs  
-- **Ansible**: The automation engine (used by Vagrant for provisioning)  
-- **Git**: For cloning this repository  
-- **Virtualization Enabled (VT-x/VTx)**: This must be enabled in your computer's BIOS/UEFI settings  
-
----
+- This repository contains the necessary manifest files and configurations to deploy the Yolo full-stack application (client, backend API, and MongoDB database) using Kubernetes.
 
 ## Project Overview
 
-The deployment process follows these steps:
+The Yolo application is designed as a classic three-tier architecture orchestrated entirely by Kubernetes:
 
-1. **Vagrant Setup:**  
-   Creates a VirtualBox VM using the `geerlingguy/ubuntu2004` box.
+Frontend (Client): A web application responsible for the user interface and cart interactions.
 
-2. **Host-Only Networking:**  
-   Configures a private network for the VM to be accessible from the host machine.
+Backend (API): A Node.js/Express API that handles business logic and manages connections to the database.
 
-3. **Ansible Provisioning:**  
-   - **Role 1 (setup-docker):** Installs Docker Engine and Docker Compose V2 plugin.  
-   - **Role 2 (app-deployment):** Clones the application code from the specified Git repository and uses `docker_compose_v2` to build and launch the application containers.
+Database (MongoDB): A non-relational database used for persistent data storage (e.g., cart items).
 
----
+## Architecture and Kubernetes Objects
 
-## Getting Started
+Component
 
-Clone this repository:
+Kubernetes Object
 
-```bash
-git clone git@github.com:Jjumaaa/yolo.git - Using a password-protected SSH key.
-                    OR
-git clone https://github.com/Jjumaaa/yolo.git - Clone using the web URL.
-cd yolo
-Start and provision the VM:
-This command will boot the VM and execute the Ansible playbook for deployment.
-(This step includes the time-consuming Docker image build process.)
+Purpose
 
-```bash
-vagrant up --provision
-If the VM is already running, you can re-run the deployment using:
+Key Feature
 
-```bash
-vagrant provision
+MongoDB
 
-Expected Output:
+StatefulSet & PersistentVolume
+
+Ensures a stable network identity and state for the database.
+
+Guarantees data persistence (e.g., cart items survive pod restarts).
+
+Backend API
+
+Deployment & Service
+
+Manages containerized Node.js application replicas and exposes the internal API port.
+
+Final stable configuration uses jjumaaa/yolo-backend:v1.0.3.
+
+Frontend Client
+
+Deployment & Service
+
+Manages client application replicas and exposes the application to the network.
+
+Handles user interaction and communicates with the Backend Service.
+
+### Prerequisites
+
+To deploy this application, you must have the following set up:
+
+A functional Kubernetes cluster (e.g., Minikube, GKE, EKS).
+
+kubectl configured to connect to your cluster.
+
+### Deployment Guide
+
+## Follow these steps to deploy the application and its dependencies:
+
+1. Deploy MongoDB (Database)
+
+Deploy the StatefulSet and associated headless service to ensure data persistence and stable networking for the database:
+
+kubectl apply -f k8s/01-mongodb-statefulset.yaml
 
 
-# Accessing the Application
-Once the vagrant provision command completes successfully (failed=0 in the PLAY RECAP), your application is running.
+Wait until the MongoDB pod is fully running:
 
-Identify VM IP: The default Host-Only IP configured in the Vagrantfile is usually 192.168.56.10.
+kubectl get pods
+# Status should show: mongo-statefulset-0   1/1   Running
 
-Open Browser: Access the deployed e-commerce application in your host browser:
 
-http://192.168.56.10
+2. Deploy Backend API
 
-#Troubleshooting
-The following issues and fixes were noted during deployment:
+Deploy the API layer. Note the critical fixes in the final configuration (Image tag v1.0.3 and probe path /):
 
-VT-x Error: Ensure Virtualization Technology (VT-x/VTx) is enabled in your BIOS.
+kubectl apply -f k8s/02-backend-deployment.yaml
 
-Hypervisor Conflict (KVM): If encountering VERR_VMX_IN_VMX_ROOT_MODE, ensure KVM or other hypervisors are disabled/unloaded before running Vagrant.
 
-Docker Install Error: The setup-docker role was updated to correctly add the official Docker repository keys and sources.
+Verify that the backend pods stabilize and become ready:
 
-Ansible Syntax Errors: The app-deployment role was corrected to use supported docker_compose_v2 parameters (project_src, build: always).
+kubectl get pods
+# Status should show: yolo-backend-deployment-...   1/1   Running
 
-#Management Commands
-To control the VM after deployment:
 
-vagrant ssh	Connect to the VM's command line.
-vagrant suspend	Pause the VM and save its state (fastest to resume).
-vagrant halt	Gracefully shut down the VM.
-vagrant status	Check the current state of the VM.
-vagrant destroy -f	Permanently delete the VM and all associated data.
+3. Deploy Frontend Client
 
-```
+Deploy the user interface layer:
 
-## Expected output when you Run vagrant up --provision or vagrant provision:
-![alt text](ImagesFolder/SuccessfulrunofVagrantProvision.png)
+kubectl apply -f k8s/03-client-deployment.yaml
+
+
+Verify that the client pods are running and ready:
+
+kubectl get pods
+# Status should show: yolo-client-deployment-...   1/1   Running
+
+
+⚠️ Critical Troubleshooting Notes
+
+The final stable deployment was achieved by addressing two major issues:
+
+Dependency Issue (v1.0.1 image crash): The original deployment image failed due to missing dependencies. This was resolved by migrating to the fully functional image: jjumaaa/yolo-backend:v1.0.3.
+
+Health Check Failure: Both /health and /api/health endpoints resulted in a 404 error, causing the pods to enter CrashLoopBackOff. This was finally resolved by setting the Liveness and Readiness probe paths to the application's root path: path: /.
