@@ -7,9 +7,9 @@ WORKDIR /app
 COPY package*.json ./
 
 # --- CRITICAL FIX: FORCE CACHE BUST ---
-# The previous image push failed because the cache was stale.
-# We add a dynamic argument that changes value to force Docker to run npm install again.
-ARG FORCE_REBUILD=20251110_2
+# Incrementing the ARG value forces Docker to see a change in this layer's content, 
+# thereby guaranteeing npm install runs.
+ARG FORCE_REBUILD=20251110_3 
 RUN npm install
 # --------------------------------------
 
