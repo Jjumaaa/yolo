@@ -5,7 +5,13 @@ WORKDIR /app
 
 # Copy and install dependencies first for layer caching
 COPY package*.json ./
+
+# --- CRITICAL FIX: FORCE CACHE BUST ---
+# The previous image push failed because the cache was stale.
+# We add a dynamic argument that changes value to force Docker to run npm install again.
+ARG FORCE_REBUILD=20251110_2
 RUN npm install
+# --------------------------------------
 
 # Copy source code
 COPY . .
