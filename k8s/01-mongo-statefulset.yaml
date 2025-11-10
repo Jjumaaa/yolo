@@ -1,56 +1,60 @@
-# 1. Headless Service: Provides stable DNS for the StatefulSet
 apiVersion: v1
 kind: Service
 metadata:
   name: mongo-headless-service
   labels:
-    app: yolo-app
-    tier: database
+    app: mongo
 spec:
   ports:
   - port: 27017
-    name: mongo
-  clusterIP: None # Defines it as a Headless Service
+    targetPort: 27017
+  clusterIP: None # Required for StatefulSet to assign stable network IDs
   selector:
-    app: yolo-app
-    tier: database
+    app: mongo
 ---
-# 2. StatefulSet Controller (K8s Controller for Service Availability)
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mongo-statefulset
   labels:
-    app: yolo-app
-    tier: database
+    app: mongo
 spec:
   serviceName: mongo-headless-service
   replicas: 1
   selector:
     matchLabels:
-      app: yolo-app
-      tier: database
+      app: mongo
   template:
     metadata:
       labels:
-        app: yolo-app
-        tier: database # Labels used for tracking (2 points secured)
+        app: mongo
     spec:
+      # --- INIT CONTAINER TO FIX VOLUME PERMISSIONS ---
+      # This fixes the common issue where the non-root MongoDB user (UID 999) 
+      # cannot write to the GKE Persistent Disk mount point.
+      initContainers:
+      - name: fix-permissions
+        image: busybox:1.36
+        command: ["sh", "-c", "chown -R 999:999 /data/db"]
+        volumeMounts:
+        - name: mongo-pvc
+          mountPath: /data/db
+      # --- END INIT CONTAINER ---
+      
       containers:
       - name: mongo
-        image: mongo:latest # Official stable database image
+        image: mongo:latest
         ports:
         - containerPort: 27017
         volumeMounts:
-        - name: mongo-persistent-storage
-          mountPath: /data/db # MongoDB default data path
-  # 3. VolumeClaimTemplates: Automatically creates PVC for persistent storage (3 points secured)
+        - name: mongo-pvc
+          mountPath: /data/db
   volumeClaimTemplates:
   - metadata:
-      name: mongo-persistent-storage
+      name: mongo-pvc
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard" # Default GKE storage class
+      storageClassName: "standard" # Use the default GKE storage class
       resources:
         requests:
-          storage: 1Gi # Requests 1 Gigabyte of persistent disk space
+          storage: 10Gi
