@@ -1,0 +1,34 @@
+# Filename: k8s/debug-backend-deployment.yaml
+# This is a temporary deployment used ONLY to inspect the container file structure.
+# It uses the broken v1.0.3 image but replaces the entrypoint with 'sleep'
+# so the container stays alive and we can exec into it.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo-backend-debug
+  labels:
+    app: yolo-backend-debug
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo-backend-debug
+  template:
+    metadata:
+      labels:
+        app: yolo-backend-debug
+    spec:
+      containers:
+      - name: yolo-backend-container-debug
+        # Using the v1.0.3 image that is currently failing
+        image: jjumaaa/yolo-backend:v1.0.3 
+        
+        # --- CRITICAL DEBUG COMMAND OVERRIDE ---
+        # This overrides 'node server.js' and keeps the container running 
+        # for 1 hour, allowing us to attach and inspect.
+        command: ["sleep"]
+        args: ["3600"] 
+        # --------------------------------------
+
+        # Probes and ports are irrelevant for this debug pod and are omitted

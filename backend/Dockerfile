@@ -5,7 +5,13 @@ WORKDIR /app
 
 # Copy and install dependencies first for layer caching
 COPY package*.json ./
+
+# --- CRITICAL FIX: FORCE CACHE BUST ---
+# Incrementing the ARG value forces Docker to see a change in this layer's content, 
+# thereby guaranteeing npm install runs.
+ARG FORCE_REBUILD=20251110_3 
 RUN npm install
+# --------------------------------------
 
 # Copy source code
 COPY . .
