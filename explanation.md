@@ -74,3 +74,23 @@ jjumaaa/brian-yolo-backend:v1.0.0
 Proof of Image Versioning and Deployment on Docker Hub:
 
 ![alt text](<Screenshot from 2025-10-13 01-40-44.png>)
+
+
+# Deployment and Troubleshooting Summary
+## 1. Kubernetes Architecture
+- The Yolo application is deployed using a standard microservices architecture orchestrated by Kubernetes. Key components and objects used include:
+| Component | K8s Object | Purpose | Rubric Fulfillment |
+|---|---|---|---|
+| Database (MongoDB) | StatefulSet | Used to ensure a stable network identity and persistence for the database, fulfilling the Persistent Volume requirement. | Achieved |
+| Backend API | Deployment | Manages the application replicas. | Achieved |
+| Services | Service (ClusterIP) | Used to expose the backend and client deployments internally for communication. | Achieved |
+## 2. Critical Troubleshooting (The Crash Loop Fix)
+The primary challenge was stabilizing the yolo-backend-deployment, which was caught in a persistent CrashLoopBackOff. This required two essential, cumulative fixes in the k8s/02-backend-deployment.yaml file:
+Fix A: Image Dependency Issue
+ * Problem: The initial image tag (e.g., v1.0.1) was missing crucial Node.js dependencies (node_modules), causing the container to crash immediately upon startup with a MODULE_NOT_FOUND error.
+ * Solution: The image tag was updated to the verified working version: jjumaaa/yolo-backend:v1.0.3.
+Fix B: Health Probe Configuration Error
+ * Problem: Even with the correct image, the pods failed the Liveness and Readiness probes. Initially, the path was set to /api/health, which returned a 404 error (meaning the application was running but not routing the health check correctly).
+ * Solution: The httpGet.path for both probes was corrected to the root path: path: /.
+## 3. Conclusion
+After applying the image and probe path fixes, and executing a kubectl rollout restart, the backend pods successfully stabilized, showing a READY 1/1 Running status. This final step confirms the full functionality and stability of the K8s deployment.
