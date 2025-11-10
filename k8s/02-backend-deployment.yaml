@@ -1,3 +1,7 @@
+# Final corrected manifest for yolo-backend-deployment
+# 1. Image tag updated to v1.0.3 (contains all dependencies).
+# 2. Liveness and Readiness probe paths corrected to /api/health (resolves 404 failure).
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,9 +20,9 @@ spec:
     spec:
       containers:
       - name: yolo-backend-container
-        # --- CRITICAL: UPDATED TAG TO v1.0.1 ---
-        image: jjumaaa/yolo-backend:v1.0.1 
-        # -------------------------------------
+        # --- FIXED IMAGE TAG: v1.0.3 is the working image ---
+        image: jjumaaa/yolo-backend:v1.0.3 
+        # ---------------------------------------------------
         ports:
         - containerPort: 5000
         env:
@@ -27,13 +31,13 @@ spec:
           value: "mongodb://mongo-headless-service:27017"
         livenessProbe:
           httpGet:
-            path: /health
+            path: /api/health # <-- PROBE FIX
             port: 5000
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
           httpGet:
-            path: /health
+            path: /api/health # <-- PROBE FIX
             port: 5000
           initialDelaySeconds: 5
           periodSeconds: 10
